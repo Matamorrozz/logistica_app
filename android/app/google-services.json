@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "691963050021",
+    "project_id": "logistica-ar",
+    "storage_bucket": "logistica-ar.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:691963050021:android:f0590b92440db0b84767cc",
+        "android_client_info": {
+          "package_name": "com.android.application"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "691963050021-li535hk8blkjjod15543f4je25sfhlo1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVUyUFl5I70UHUb4NxVM0UGEkhqPZ_ms0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "691963050021-a5tn4qf3gid26b7btec3lu0mmg81pm4n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "691963050021-r88d27g1pm74dpqf275rsv30tmuft9ip.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.entregas"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:691963050021:android:c1b2306b8d2cacb54767cc",
+        "android_client_info": {
+          "package_name": "com.example.logistica_ar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "691963050021-li535hk8blkjjod15543f4je25sfhlo1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVUyUFl5I70UHUb4NxVM0UGEkhqPZ_ms0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "691963050021-a5tn4qf3gid26b7btec3lu0mmg81pm4n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "691963050021-r88d27g1pm74dpqf275rsv30tmuft9ip.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.entregas"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
