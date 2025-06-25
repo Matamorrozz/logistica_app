@@ -38,6 +38,48 @@ class _ProcesoLiberacionState extends State<ProcesoLiberacion> {
   final _folioDesviacion = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  List<String> _maquinasList = [];
+  bool _isLoadingMachines = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMachines();
+  }
+
+  Future<void> _fetchMachines() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://desarrollotecnologicoar.com/api2/maquinas/'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _maquinasList =
+              data.map<String>((item) => item['maquina'].toString()).toList();
+          _isLoadingMachines = false;
+        });
+      } else {
+        setState(() {
+          _isLoadingMachines = false;
+        });
+        throw Exception('Failed to load machines');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingMachines = false;
+      });
+      print('Error fetching machines: $e');
+      // Optionally show an error message to the user
+      Flushbar(
+        message: 'Error al cargar las máquinas. Intente nuevamente.',
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ).show(context);
+    }
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     if (_compressedImages.length >= 20) {
       Flushbar(
@@ -281,93 +323,42 @@ class _ProcesoLiberacionState extends State<ProcesoLiberacion> {
                 Row(
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'Equipo afectado',
-                          labelStyle: GoogleFonts.roboto(fontSize: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        value: _equipos,
-                        isExpanded: true,
-                        items: <String>[
-                      "ATC BOSS 1325 (ATC5 1325)",
-"ATC BOSS 1325 Z300 (ATC5 1325 Z300)",
-"ATC BOSS 1325R  (ATC5 1325R)",
-"ATC BOSS X2 1325 TT (ATC5 X2 1325 TT)",
-"ATC BOSS X2 1325 4 BOMBAS",
-"LIFTWORX",
-"CREATOR 0704",
-"CREATOR X2 1309",
-"CREATOR 1325",
-"CREATOR 1409",
-"CREATOR 1610",
-"FIBERBLADE X0",
-"FIBERBLADE X3",
-"FIBERGRAVER (MFL 220)  50W",
-"FIBERGRAVER (MFL 220) 30W",
-"MAKER 0609 NM",
-"MULTIHEAD 1525",
-"MULTIHEAD 1325",
-"PLASMABLADE 1330",
-"PLASMABLADE 1850",
-"SAAP 10HP",
-"SAAP 15HP",
-"SHOP 1325",
-"SHOP 1330 PR",
-"SHOP 1836 PR",
-"SHOP PRO 1325",
-"STONE 1325",
-"WORKS 1325",
-"WORKS B 1325",
-"WORKS 1830",
-"WELDWORX",
-"WELDWORX NM",
-"BENDWORX 50T",
-"BENDWORX 125T",
-"BENDWORX 160T",
-"FIBERBLADE X0 NM",
-"FIBERBLADE X0 R3 NM",
-"FIBERBLADE X0 R6 NM",
-"WELDBOT",
-"LIFTWORX 360",
-"T6L",
-"FIBERBLADE X4",
-"SHOP PRO HQD 1325",
-"FIB-AIR 20HP",
-"FIB-AIR 30HP",
-"ATC BOSS 1325 C",
-"BENDWORX 63T",
-"BENDWORX 200T",
-"FILT-AIR",
-"TECHSTYLE",
-"CREATOR 1309",
-"FIBERGRAVER DT",
-"MULTIHEAD ADV6",
-
-                        ].map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Tooltip(
-                              message: value,
-                              child:
-                                  Text(value, overflow: TextOverflow.ellipsis),
+                      child: _isLoadingMachines
+                          ? const Center(child: CircularProgressIndicator())
+                          : DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: 'Equipo afectado',
+                                labelStyle: GoogleFonts.roboto(fontSize: 15),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              value: _equipos,
+                              isExpanded: true,
+                              items: _maquinasList
+                                  .map<DropdownMenuItem<String>>(
+                                      (String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Tooltip(
+                                    message: value,
+                                    child: Text(value,
+                                        overflow: TextOverflow.ellipsis),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _equipos = newValue;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Por favor seleccione un equipo afectado';
+                                }
+                                return null;
+                              },
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _equipos = newValue;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor seleccione un equipo afectado';
-                          }
-                          return null;
-                        },
-                      ),
                     ),
                   ],
                 ),
@@ -422,7 +413,7 @@ class _ProcesoLiberacionState extends State<ProcesoLiberacion> {
                         value: _responsable,
                         isExpanded: true,
                         items: <String>[
-                         "ALFONSO GUZMAN ROBLEDO",
+                          "ALFONSO GUZMAN ROBLEDO",
                           "VICENTE MARTINEZ ARRAZOLA",
                           "JOSE LUIS GARCIA VAZQUEZ",
                           "MARTIN JOEL ESPARZA CARBAJAL",

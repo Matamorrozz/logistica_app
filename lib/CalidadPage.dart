@@ -1,10 +1,14 @@
-import 'package:entregas/pages/Enbarque.dart';
+// lib/CalidadPage.dart
+
 import 'package:entregas/pages/incoming.dart';
 import 'package:entregas/pages/procesoInspeccion.dart';
 import 'package:entregas/pages/procesoLiberacion.dart';
+import 'package:entregas/pages/Enbarque.dart';
 import 'package:flutter/material.dart';
 
 class CalidadPage extends StatelessWidget {
+  const CalidadPage({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -12,159 +16,102 @@ class CalidadPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  Image.asset(
-                    'lib/images/incoming.png',
-                    width: 500,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const Incoming()),
-                      );
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          Colors.black),
-                    ),
-                    child: const SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: EdgeInsets.all(6.0),
-                        child: Text(
-                          'Incoming',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+
+            // --- Incoming ---
+            _MenuTile(
+              imagePath: 'lib/images/incoming.png',
+              label: 'Incoming',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const Incoming()),
               ),
             ),
+
             const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  Image.asset(
-                    'lib/images/procesosInspeccion.png',
-                    width: 500,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ProcesoInspeccion()),
-                      );
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          Colors.black),
-                    ),
-                    child: const SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: EdgeInsets.all(6.0),
-                        child: Text(
-                          'Procesos de inspección',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+
+            // --- Proceso de Inspección ---
+            _MenuTile(
+              imagePath: 'lib/images/procesosInspeccion.png',
+              label: 'Procesos de inspección',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProcesoInspeccion()),
               ),
             ),
+
             const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  Image.asset(
-                    'lib/images/procesoliberacion.png',
-                    width: 500,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ProcesoLiberacion()),
-                      );
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromRGBO(54, 54, 57, 0.8)),
-                    ),
-                    child: const SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: EdgeInsets.all(6.0),
-                        child: Text(
-                          'Procesos de liberación',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+
+            // --- Proceso de Liberación ---
+            _MenuTile(
+              imagePath: 'lib/images/procesoliberacion.png',
+              label: 'Procesos de liberación',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProcesoLiberacion()),
               ),
+              backgroundColor: const Color.fromRGBO(54, 54, 57, 0.8),
             ),
+
             const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  Image.asset(
-                    'lib/images/embarques.png',
-                    width: 500,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const Embarque()),
-                      );
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromRGBO(54, 54, 57, 0.8)),
-                    ),
-                    child: const SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: EdgeInsets.all(6.0),
-                        child: Text(
-                          'Pre-Embarque',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+
+            // --- Pre-Embarque ---
+            _MenuTile(
+              imagePath: 'lib/images/embarques.png',
+              label: 'Pre-Embarque',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const Embarque()),
               ),
+              backgroundColor: const Color.fromRGBO(54, 54, 57, 0.8),
             ),
+
+            const SizedBox(height: 14),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  final String imagePath;
+  final String label;
+  final VoidCallback onTap;
+  final Color backgroundColor;
+
+  const _MenuTile({
+    required this.imagePath,
+    required this.label,
+    required this.onTap,
+    this.backgroundColor = Colors.black,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        children: [
+          Image.asset(imagePath, width: 500),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: onTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: backgroundColor,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.all(6.0),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
