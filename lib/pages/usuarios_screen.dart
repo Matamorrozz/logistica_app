@@ -2,29 +2,25 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class Maquina {
+class Operador {
   final int? id;
-  final String nombre;
-  final String familia;
+  final String? nombre;
 
-  Maquina({
+  Operador({
     this.id,
-    required this.nombre,
-    required this.familia,
+     this.nombre,
   });
 
-  factory Maquina.fromJson(Map<String, dynamic> json) {
-    return Maquina(
+  factory Operador.fromJson(Map<String, dynamic> json) {
+    return Operador(
       id: json['id'],
       nombre: json['nombre'],
-      familia: json['familia'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'nombre': nombre,
-      'familia': familia,
     };
   }
 }
@@ -33,23 +29,20 @@ class UsuariosScreen extends StatefulWidget {
   const UsuariosScreen({Key? key}) : super(key: key);
 
   @override
-  State<UsuariosScreen> createState() => _MaquinasScreenState();
+  State<UsuariosScreen> createState() => _OperadoresScreenState();
 }
 
-class _MaquinasScreenState extends State<UsuariosScreen> {
-  List<Maquina> _maquinas = [];
-
-  final String baseUrl = 'http://desarrollotecnologicoar.com/api2/maquinas/';
-
-  final List<String> familias = ['Router', 'Láser CO2', 'Láser Fibra Óptica', 'Plasma', 'Dobladora', 'Grua Neumática', 'Externa'];
+class _OperadoresScreenState extends State<UsuariosScreen> {
+  List<Operador> _operadores = [];
+  final String baseUrl = 'http://desarrollotecnologicoar.com/api2/operadores_logistica/';
 
   @override
   void initState() {
     super.initState();
-    _fetchMaquinas();
+    _fetchOperadores();
   }
 
-  Future<void> _fetchMaquinas() async {
+  Future<void> _fetchOperadores() async {
     try {
       final response = await http.get(
         Uri.parse(baseUrl),
@@ -59,190 +52,134 @@ class _MaquinasScreenState extends State<UsuariosScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         setState(() {
-          _maquinas = data.map((item) => Maquina.fromJson(item)).toList();
+          _operadores = data.map((item) => Operador.fromJson(item)).toList();
         });
       } else {
-        print('Error al obtener máquinas [${response.statusCode}]: ${response.body}');
+        print('Error al obtener operadores [${response.statusCode}]: ${response.body}');
       }
     } catch (e) {
       print('Error de conexión: $e');
     }
   }
 
-  Future<void> _crearMaquina(String nombre, String familia) async {
+  Future<void> _crearOperador(String nombre) async {
     try {
+      final uri = Uri.parse(baseUrl);
+      final payload = jsonEncode({'operador': nombre});
+
+      // Intento inicial
       final response = await http.post(
-        Uri.parse(baseUrl),
+        uri,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'nombre': nombre,
-          'familia': familia,
-          'created_at': DateTime.now().toIso8601String(),
-        }),
+        body: payload,
       );
 
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
         setState(() {
-          _maquinas.add(Maquina.fromJson(data));
+          _operadores.add(Operador.fromJson(data));
         });
       } else if (response.statusCode == 301 || response.statusCode == 302) {
-        // Seguir la redirección manualmente
-        final redirectedUrl = response.headers['location'];
-        if (redirectedUrl != null) {
-          print('Redirigiendo a: $redirectedUrl');
-          final newResponse = await http.post(
-            Uri.parse(redirectedUrl),
+        final redirectUrl = response.headers['location'];
+        if (redirectUrl != null) {
+          final redirectedResponse = await http.post(
+            Uri.parse(redirectUrl),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'nombre': nombre,
-              'familia': familia,
-              'created_at': DateTime.now().toIso8601String(),
-            }),
+            body: payload,
           );
-          if (newResponse.statusCode == 201) {
-            final data = jsonDecode(newResponse.body);
+          if (redirectedResponse.statusCode == 201) {
+            final data = jsonDecode(redirectedResponse.body);
             setState(() {
-              _maquinas.add(Maquina.fromJson(data));
+              _operadores.add(Operador.fromJson(data));
             });
           } else {
-            print('Error después de redirección: ${newResponse.statusCode} - ${newResponse.body}');
+            print('Error al crear operador tras redirección [${redirectedResponse.statusCode}]: ${redirectedResponse.body}');
           }
+        } else {
+          print('Redirección sin ubicación');
         }
       } else {
-        print('Error al crear máquina [${response.statusCode}]: ${response.body}');
+        print('Error al crear operador [${response.statusCode}]: ${response.body}');
       }
     } catch (e) {
       print('Error de conexión: $e');
     }
   }
 
-
-    Future<void> _editarMaquina(int id, String nombre, String familia) async {
-  try {
-    final response = await http.put(
-      Uri.parse('${baseUrl}${id}'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'nombre': nombre,
-        'familia': familia,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      setState(() {
-        int index = _maquinas.indexWhere((m) => m.id == id);
-        if (index != -1) {
-          _maquinas[index] = Maquina.fromJson(data);
-        }
-      });
-    } else if (response.statusCode == 301 || response.statusCode == 302) {
-      // Seguir la redirección manualmente
-      final redirectedUrl = response.headers['location'];
-        if (redirectedUrl != null) {
-          print('Redirigiendo a: $redirectedUrl');
-          final newResponse = await http.put(
-            Uri.parse(redirectedUrl),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'nombre': nombre,
-              'familia': familia,
-            }),
-          );
-          if (newResponse.statusCode == 200) {
-            final data = jsonDecode(newResponse.body);
-            setState(() {
-              int index = _maquinas.indexWhere((m) => m.id == id);
-              if (index != -1) {
-                _maquinas[index] = Maquina.fromJson(data);
-              }
-            });
-          } else {
-            print('Error después de redirección: ${newResponse.statusCode} - ${newResponse.body}');
-          }
-        }
-      } else {
-        print('Error al editar máquina [${response.statusCode}]: ${response.body}');
-      }
-    } catch (e) {
-      print('Error de conexión: $e');
-    }
-  }
-
-
-
-  Future<void> _eliminarMaquina(int id) async {
+  Future<void> _editarOperador(int id, String nombre) async {
     try {
+      final uri = Uri.parse('$baseUrl$id');
+      final payload = jsonEncode({'operador': nombre});
+
+      final response = await http.put(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: payload,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          final index = _operadores.indexWhere((o) => o.id == id);
+          if (index != -1) {
+            _operadores[index] = Operador.fromJson(data);
+          }
+        });
+      } else {
+        print('Error al editar operador [${response.statusCode}]: ${response.body}');
+      }
+    } catch (e) {
+      print('Error de conexión: $e');
+    }
+  }
+
+  Future<void> _eliminarOperador(int id) async {
+    try {
+      final uri = Uri.parse('$baseUrl$id');
       final response = await http.delete(
-        Uri.parse('$baseUrl$id'),
+        uri,
         headers: {'Content-Type': 'application/json'},
       );
 
-      if (response.statusCode == 200 || response.statusCode == 301) {
+      if (response.statusCode == 200) {
         setState(() {
-          _maquinas.removeWhere((m) => m.id == id);
+          _operadores.removeWhere((o) => o.id == id);
         });
       } else {
-        print('Error al eliminar máquina [${response.statusCode}]: ${response.body}');
+        print('Error al eliminar operador [${response.statusCode}]: ${response.body}');
       }
     } catch (e) {
       print('Error de conexión: $e');
     }
   }
 
-  void _mostrarDialogo({Maquina? maquina}) {
-    final _nombreController = TextEditingController(text: maquina?.nombre ?? '');
-    String _familiaSeleccionada = maquina?.familia ?? familias.first; // Selecciona la familia actual o la primera opción
+  void _mostrarDialogo({Operador? operador}) {
+    final _nombreController = TextEditingController(text: operador?.nombre ?? '');
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(maquina == null ? 'Crear Máquina' : 'Editar Máquina'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _nombreController,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
-                ),
-                 DropdownButtonFormField<String>(
-                  value: _familiaSeleccionada,
-                  decoration: const InputDecoration(labelText: 'Familia'),
-                  items: familias.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      _familiaSeleccionada = newValue;
-                    }
-                  }
-                )
-              ],
-            ),
+          title: Text(operador == null ? 'Crear Operador' : 'Editar Operador'),
+          content: TextField(
+            controller: _nombreController,
+            decoration: const InputDecoration(labelText: 'Nombre de Operador'),
           ),
           actions: [
             TextButton(
               child: const Text('Cancelar'),
               onPressed: () => Navigator.pop(context),
             ),
-                ElevatedButton(
-              child: Text(maquina == null ? 'Crear' : 'Guardar'),
+            ElevatedButton(
+              child: Text(operador == null ? 'Crear' : 'Guardar'),
               onPressed: () async {
-                String nombre = _nombreController.text.trim();
-                if (nombre.isEmpty) {
-                  return;
-                }
+                final nombre = _nombreController.text.trim();
+                if (nombre.isEmpty) return;
 
-                if (maquina == null) {
-                  await _crearMaquina(nombre, _familiaSeleccionada);
+                if (operador == null) {
+                  await _crearOperador(nombre);
                 } else {
-                  await _editarMaquina(maquina.id!, nombre, _familiaSeleccionada);
+                  await _editarOperador(operador.id!, nombre);
                 }
 
                 Navigator.pop(context);
@@ -258,31 +195,26 @@ class _MaquinasScreenState extends State<UsuariosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Máquinas'),
+        title: const Text('Operadores Logística'),
       ),
-      body: _maquinas.isEmpty
-          ? const Center(child: Text('No hay máquinas registradas'))
+      body: _operadores.isEmpty
+          ? const Center(child: Text('No hay operadores registrados'))
           : ListView.builder(
-              itemCount: _maquinas.length,
+              itemCount: _operadores.length,
               itemBuilder: (context, index) {
-                final maquina = _maquinas[index];
+                final operador = _operadores[index];
                 return ListTile(
-                  title: Text(maquina.nombre),
-                  subtitle: Text('Familia: ${maquina.familia}'),
+                  title: Text(operador.nombre ?? 'Sin nombre'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () {
-                          _mostrarDialogo(maquina: maquina);
-                        },
+                        onPressed: () => _mostrarDialogo(operador: operador),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          _eliminarMaquina(maquina.id!);
-                        },
+                        onPressed: () => _eliminarOperador(operador.id!),
                       ),
                     ],
                   ),
@@ -291,9 +223,7 @@ class _MaquinasScreenState extends State<UsuariosScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
-        onPressed: () {
-          _mostrarDialogo();
-        },
+        onPressed: () => _mostrarDialogo(),
       ),
     );
   }

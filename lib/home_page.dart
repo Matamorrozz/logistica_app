@@ -120,11 +120,7 @@ class _HomePageState extends State<HomePage> {
             label: 'Colaboradores',
             backgroundColor: Colors.black,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Personal',
-            backgroundColor: Colors.black,
-          ),
+  
           
    
         ],

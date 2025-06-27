@@ -3,6 +3,8 @@
 import 'package:entregas/pages/incoming.dart';
 import 'package:entregas/pages/procesoInspeccion.dart';
 import 'package:entregas/pages/procesoLiberacion.dart';
+
+import 'package:entregas/pages/liberacion_empaque.dart';
 import 'package:entregas/pages/Enbarque.dart';
 import 'package:flutter/material.dart';
 
@@ -49,7 +51,6 @@ class CalidadPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const ProcesoLiberacion()),
               ),
-              backgroundColor: const Color.fromRGBO(54, 54, 57, 0.8),
             ),
 
             const SizedBox(height: 14),
@@ -62,7 +63,15 @@ class CalidadPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const Embarque()),
               ),
-              backgroundColor: const Color.fromRGBO(54, 54, 57, 0.8),
+            ),
+
+              _MenuTile(
+              imagePath: 'lib/images/proceso_embarque2.png',
+              label: 'Proceso de liberación de embarque',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LiberacionEmpaque()),
+              ),
             ),
 
             const SizedBox(height: 14),
