@@ -18,6 +18,29 @@ class LiberacionEmpaque extends StatefulWidget {
   _ProcesoLiberacionState createState() => _ProcesoLiberacionState();
 }
 
+class Operador {
+  final int? id;
+  final String nombre;
+
+  Operador({
+    this.id,
+    required this.nombre,
+  });
+
+  factory Operador.fromJson(Map<String, dynamic> json) {
+    return Operador(
+      id: json['id'] as int?,
+      nombre: (json['nombre'] as String).trim(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'nombre': nombre,
+    };
+  }
+}
+
 class _ProcesoLiberacionState extends State<LiberacionEmpaque> {
   bool _isButtonDisabled = false;
   bool _isSending = false; // Para controlar el estado del envío
@@ -27,7 +50,7 @@ class _ProcesoLiberacionState extends State<LiberacionEmpaque> {
   String correo = "";
   String usuario = "";
   String? _responsable;
-  String version = "v10";
+  String version = "v11";
   String fase = "Proceso de Liberación de Empaque";
   final _numSerie = TextEditingController();
   String? _equipos;
@@ -40,11 +63,47 @@ class _ProcesoLiberacionState extends State<LiberacionEmpaque> {
 
   List<String> _maquinasList = [];
   bool _isLoadingMachines = true;
-
+  List<String> _operadoresList = [];
+  bool _isLoadingOperadores = true;
   @override
   void initState() {
     super.initState();
     _fetchMachines();
+    _fetchOperadores();
+  }
+
+  Future<void> _fetchOperadores() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://desarrollotecnologicoar.com/api2/operadores_logistica/'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _operadoresList =
+              data.map<String>((item) => item['nombre'].toString()).toList();
+          _isLoadingOperadores = false;
+        });
+      } else {
+        setState(() {
+          _isLoadingOperadores = false;
+        });
+        throw Exception('Failed to load machines');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingMachines = false;
+      });
+      print('Error fetching machines: $e');
+      // Optionally show an error message to the user
+      Flushbar(
+        message: 'Error al cargar las máquinas. Intente nuevamente.',
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ).show(context);
+    }
   }
 
   Future<void> _fetchMachines() async {
@@ -402,54 +461,37 @@ class _ProcesoLiberacionState extends State<LiberacionEmpaque> {
                 Row(
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'Operador responsable',
-                          labelStyle: GoogleFonts.roboto(fontSize: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        value: _responsable,
-                        isExpanded: true,
-                        items: <String>[
-                          "ALFONSO GUZMAN ROBLEDO",
-                          "VICENTE MARTINEZ ARRAZOLA",
-                          "JOSE LUIS GARCIA VAZQUEZ",
-                          "MARTIN JOEL ESPARZA CARBAJAL",
-                          "JORGE NAVARRETE ROSALES",
-                          "DANIEL ESCOBEDO DE LOERA",
-                          "CESAR RAMON ROJAS ENCISO",
-                          "HERIBERTO CHAVIRA PARRA",
-                          "JESUS ALBERTO ALVAREZ DOMINGUEZ",
-                          "ALEJANDRO VIVANCO ABARCA",
-                          "JULIO ESTRADA VILLEGAS",
-                          'LOGÍSTICA INTERNA',
-                          'IST',
-                          'PROVEEDOR',
-                          'ALMACÉN'
-                        ].map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Tooltip(
-                              message: value,
-                              child:
-                                  Text(value, overflow: TextOverflow.ellipsis),
+                      child: _isLoadingOperadores
+                          ? const Center(child: CircularProgressIndicator())
+                          : DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: 'Operador responsable',
+                                labelStyle: GoogleFonts.roboto(fontSize: 15),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              value: _responsable,
+                              isExpanded: true,
+                              items: _operadoresList.map((nombre) {
+                                return DropdownMenuItem<String>(
+                                  value: nombre,
+                                  child: Text(nombre,
+                                      overflow: TextOverflow.ellipsis),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _responsable = newValue;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Por favor seleccione un operador responsable';
+                                }
+                                return null;
+                              },
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _responsable = newValue;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor seleccione el operador responsable';
-                          }
-                          return null;
-                        },
-                      ),
                     ),
                   ],
                 ),
@@ -503,9 +545,6 @@ class _ProcesoLiberacionState extends State<LiberacionEmpaque> {
                     return null;
                   },
                 ),
-        
-     
-
                 const SizedBox(height: 20),
                 GridView.builder(
                   shrinkWrap: true,

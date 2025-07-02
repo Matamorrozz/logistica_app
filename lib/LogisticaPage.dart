@@ -28,7 +28,7 @@ class LogisticaPage extends StatelessWidget {
                     },
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromRGBO(54, 54, 57, 0.8)),
+                          const Color.fromARGB(204, 0, 0, 0)),
                     ),
                     child: const SizedBox(
                       width: double.infinity,

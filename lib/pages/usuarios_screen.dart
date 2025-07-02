@@ -3,38 +3,34 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class Operador {
-  final int? id;
-  final String? nombre;
+  final int id;
+  final String nombre;
 
-  Operador({
-    this.id,
-     this.nombre,
-  });
+  Operador({required this.id, required this.nombre});
 
   factory Operador.fromJson(Map<String, dynamic> json) {
     return Operador(
-      id: json['id'],
-      nombre: json['nombre'],
+      id: json['id'] as int,
+      nombre: json['nombre'] as String,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'nombre': nombre,
-    };
-  }
+  Map<String, dynamic> toJson() => {'nombre': nombre};
 }
 
 class UsuariosScreen extends StatefulWidget {
   const UsuariosScreen({Key? key}) : super(key: key);
 
   @override
-  State<UsuariosScreen> createState() => _OperadoresScreenState();
+  State<UsuariosScreen> createState() => _UsuariosScreenState();
 }
 
-class _OperadoresScreenState extends State<UsuariosScreen> {
+class _UsuariosScreenState extends State<UsuariosScreen> {
   List<Operador> _operadores = [];
-  final String baseUrl = 'http://desarrollotecnologicoar.com/api2/operadores_logistica/';
+  bool _isLoading = true;
+
+  final String _baseUrl =
+      'https://desarrollotecnologicoar.com/api2/operadores_logistica';
 
   @override
   void initState() {
@@ -43,151 +39,175 @@ class _OperadoresScreenState extends State<UsuariosScreen> {
   }
 
   Future<void> _fetchOperadores() async {
+    setState(() => _isLoading = true);
     try {
-      final response = await http.get(
-        Uri.parse(baseUrl),
-        headers: {'Content-Type': 'application/json'},
-      );
-
+      final response = await http.get(Uri.parse('$_baseUrl/'));
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final List data = jsonDecode(response.body);
         setState(() {
-          _operadores = data.map((item) => Operador.fromJson(item)).toList();
+          _operadores = data
+              .map((item) => Operador.fromJson(item as Map<String, dynamic>))
+              .toList();
+          _isLoading = false;
         });
       } else {
-        print('Error al obtener operadores [${response.statusCode}]: ${response.body}');
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error al cargar operadores: ${response.statusCode}',
+            ),
+          ),
+        );
       }
     } catch (e) {
-      print('Error de conexión: $e');
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Conexión fallida: $e')),
+      );
     }
   }
 
   Future<void> _crearOperador(String nombre) async {
     try {
-      final uri = Uri.parse(baseUrl);
-      final payload = jsonEncode({'operador': nombre});
-
-      // Intento inicial
       final response = await http.post(
-        uri,
+        Uri.parse('$_baseUrl/'),
         headers: {'Content-Type': 'application/json'},
-        body: payload,
+        body: jsonEncode({'nombre': nombre}),
       );
-
-      if (response.statusCode == 201) {
-        final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
         setState(() {
           _operadores.add(Operador.fromJson(data));
         });
-      } else if (response.statusCode == 301 || response.statusCode == 302) {
-        final redirectUrl = response.headers['location'];
-        if (redirectUrl != null) {
-          final redirectedResponse = await http.post(
-            Uri.parse(redirectUrl),
-            headers: {'Content-Type': 'application/json'},
-            body: payload,
-          );
-          if (redirectedResponse.statusCode == 201) {
-            final data = jsonDecode(redirectedResponse.body);
-            setState(() {
-              _operadores.add(Operador.fromJson(data));
-            });
-          } else {
-            print('Error al crear operador tras redirección [${redirectedResponse.statusCode}]: ${redirectedResponse.body}');
-          }
-        } else {
-          print('Redirección sin ubicación');
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Operador creado')),
+        );
       } else {
-        print('Error al crear operador [${response.statusCode}]: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error al crear operador: ${response.statusCode}',
+            ),
+          ),
+        );
       }
     } catch (e) {
-      print('Error de conexión: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Conexión fallida: $e')),
+      );
     }
   }
 
   Future<void> _editarOperador(int id, String nombre) async {
     try {
-      final uri = Uri.parse('$baseUrl$id');
-      final payload = jsonEncode({'operador': nombre});
-
       final response = await http.put(
-        uri,
+        Uri.parse('$_baseUrl/$id/'),
         headers: {'Content-Type': 'application/json'},
-        body: payload,
+        body: jsonEncode({'nombre': nombre}),
       );
-
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
         setState(() {
-          final index = _operadores.indexWhere((o) => o.id == id);
-          if (index != -1) {
-            _operadores[index] = Operador.fromJson(data);
+          final idx = _operadores.indexWhere((o) => o.id == id);
+          if (idx != -1) {
+            _operadores[idx] = Operador(id: id, nombre: nombre);
           }
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Operador actualizado')),
+        );
       } else {
-        print('Error al editar operador [${response.statusCode}]: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error al editar operador: ${response.statusCode}',
+            ),
+          ),
+        );
       }
     } catch (e) {
-      print('Error de conexión: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Conexión fallida: $e')),
+      );
     }
   }
 
   Future<void> _eliminarOperador(int id) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Eliminar Operador'),
+        content: const Text('¿Estás seguro de eliminar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+
     try {
-      final uri = Uri.parse('$baseUrl$id');
       final response = await http.delete(
-        uri,
+        Uri.parse('$_baseUrl/$id/'),
         headers: {'Content-Type': 'application/json'},
       );
-
       if (response.statusCode == 200) {
-        setState(() {
-          _operadores.removeWhere((o) => o.id == id);
-        });
+        setState(() => _operadores.removeWhere((o) => o.id == id));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Operador eliminado')),
+        );
       } else {
-        print('Error al eliminar operador [${response.statusCode}]: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error al eliminar: ${response.statusCode}',
+            ),
+          ),
+        );
       }
     } catch (e) {
-      print('Error de conexión: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Conexión fallida: $e')),
+      );
     }
   }
 
-  void _mostrarDialogo({Operador? operador}) {
-    final _nombreController = TextEditingController(text: operador?.nombre ?? '');
-
+  void _mostrarFormulario({Operador? operador}) {
+    final controller = TextEditingController(text: operador?.nombre ?? '');
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(operador == null ? 'Crear Operador' : 'Editar Operador'),
-          content: TextField(
-            controller: _nombreController,
-            decoration: const InputDecoration(labelText: 'Nombre de Operador'),
+      builder: (_) => AlertDialog(
+        title: Text(operador == null ? 'Crear Operador' : 'Editar Operador'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Nombre'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
           ),
-          actions: [
-            TextButton(
-              child: const Text('Cancelar'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            ElevatedButton(
-              child: Text(operador == null ? 'Crear' : 'Guardar'),
-              onPressed: () async {
-                final nombre = _nombreController.text.trim();
-                if (nombre.isEmpty) return;
-
-                if (operador == null) {
-                  await _crearOperador(nombre);
-                } else {
-                  await _editarOperador(operador.id!, nombre);
-                }
-
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        );
-      },
+          ElevatedButton(
+            onPressed: () {
+              final nombre = controller.text.trim();
+              if (nombre.isEmpty) return;
+              Navigator.pop(context);
+              if (operador == null) {
+                _crearOperador(nombre);
+              } else {
+                _editarOperador(operador.id!, nombre);
+              }
+            },
+            child: Text(operador == null ? 'Crear' : 'Guardar'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -195,36 +215,47 @@ class _OperadoresScreenState extends State<UsuariosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Operadores Logística'),
+        title: const Text('Operadores'),
+        actions: [
+          IconButton(
+            onPressed: () => _mostrarFormulario(),
+            icon: const Icon(Icons.add),
+          ),
+        ],
       ),
-      body: _operadores.isEmpty
-          ? const Center(child: Text('No hay operadores registrados'))
-          : ListView.builder(
-              itemCount: _operadores.length,
-              itemBuilder: (context, index) {
-                final operador = _operadores[index];
-                return ListTile(
-                  title: Text(operador.nombre ?? 'Sin nombre'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _mostrarDialogo(operador: operador),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _operadores.isEmpty
+              ? const Center(child: Text('No hay operadores'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _operadores.length,
+                  itemBuilder: (ctx, i) {
+                    final op = _operadores[i];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _eliminarOperador(operador.id!),
+                      child: ListTile(
+                        title: Text(op.nombre),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _mostrarFormulario(operador: op),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _eliminarOperador(op.id!),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => _mostrarDialogo(),
-      ),
+                    );
+                  },
+                ),
     );
   }
 }

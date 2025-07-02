@@ -14,12 +14,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 List<String> _maquinasList = [];
 bool _isLoadingMachines = true;
 
+List<String> _operadoresList = [];
+bool _isLoadingOperadores = true;
 
 class ProcesoInspeccion extends StatefulWidget {
   const ProcesoInspeccion({Key? key}) : super(key: key);
 
   @override
-  
   _ProcesoInspeccionState createState() => _ProcesoInspeccionState();
 }
 
@@ -46,6 +47,29 @@ class Maquina {
   }
 }
 
+class Operador {
+  final int? id;
+  final String nombre;
+
+  Operador({
+    this.id,
+    required this.nombre,
+  });
+
+  factory Operador.fromJson(Map<String, dynamic> json) {
+    return Operador(
+      id: json['id'] as int?,
+      nombre: (json['nombre'] as String).trim(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'nombre': nombre,
+    };
+  }
+}
+
 class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
   bool _isButtonDisabled = false;
   bool _isSending = false; // Para controlar el estado del envío
@@ -57,7 +81,7 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
   String fase = "Proceso de Inspeccion";
   final _numSerie = TextEditingController();
   String? _equipos;
-  String version = "v10";
+  String version = "v11";
   String? _accesorio;
   String? _numRevision;
   String? _responsable;
@@ -66,6 +90,7 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
   String? _clasificacionDefecto;
   String? _parteAfectada;
   String? _tipoDefectivo;
+  String? _condicionEquipo; // "Nuevo" o "Refurbished"
   // String? _dispositivoDefectivo;
   String? _clasificacionDefectivo;
   final _descripcion = TextEditingController();
@@ -76,7 +101,9 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
   void initState() {
     super.initState();
     _fetchMachines();
+    _fetchOperadores();
   }
+
   Future<void> _pickImage(ImageSource source) async {
     if (_compressedImages.length >= 20) {
       Flushbar(
@@ -106,7 +133,7 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
     }
   }
 
- Future<void> _fetchMachines() async {
+  Future<void> _fetchMachines() async {
     try {
       final response = await http.get(
         Uri.parse('https://desarrollotecnologicoar.com/api2/maquinas/'),
@@ -115,7 +142,8 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
-          _maquinasList = data.map<String>((item) => item['maquina'].toString()).toList();
+          _maquinasList =
+              data.map<String>((item) => item['maquina'].toString()).toList();
           _isLoadingMachines = false;
         });
       } else {
@@ -137,6 +165,41 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
       ).show(context);
     }
   }
+
+  Future<void> _fetchOperadores() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://desarrollotecnologicoar.com/api2/operadores_logistica/'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _operadoresList =
+              data.map<String>((item) => item['nombre'].toString()).toList();
+          _isLoadingOperadores = false;
+        });
+      } else {
+        setState(() {
+          _isLoadingOperadores = false;
+        });
+        throw Exception('Failed to load machines');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingMachines = false;
+      });
+      print('Error fetching machines: $e');
+      // Optionally show an error message to the user
+      Flushbar(
+        message: 'Error al cargar las máquinas. Intente nuevamente.',
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ).show(context);
+    }
+  }
+
   Future<void> _pickImages() async {
     if (_compressedImages.length >= 20) {
       Flushbar(
@@ -251,6 +314,7 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
       'clasificacionDefectivo': _clasificacionDefectivo,
       'desviacion': desviacion,
       'folioDesviacion': folioDesviacion,
+      'condicionEquipo': _condicionEquipo,
       'imagenes': base64Images, // Agregar las imágenes en formato base64
     };
     print("Datos a enviar: $data");
@@ -364,7 +428,7 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                        Expanded(
+                    Expanded(
                       child: _isLoadingMachines
                           ? const Center(child: CircularProgressIndicator())
                           : DropdownButtonFormField<String>(
@@ -378,7 +442,8 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
                               value: _equipos,
                               isExpanded: true,
                               items: _maquinasList
-                                  .map<DropdownMenuItem<String>>((String value) {
+                                  .map<DropdownMenuItem<String>>(
+                                      (String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
                                   child: Tooltip(
@@ -469,53 +534,37 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
                   },
                 ),
                 const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Nombre del responsable del defecto/incidente',
-                    labelStyle: GoogleFonts.roboto(fontSize: 15),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  value: _responsable,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.black,
-                  ),
-                  items: <String>[
-                    "ALFONSO GUZMAN ROBLEDO",
-                    "VICENTE MARTINEZ ARRAZOLA",
-                    "JOSE LUIS GARCIA VAZQUEZ",
-                    "MARTIN JOEL ESPARZA CARBAJAL",
-                    "JORGE NAVARRETE ROSALES",
-                    "DANIEL ESCOBEDO DE LOERA",
-                    "CESAR RAMON ROJAS ENCISO",
-                    "HERIBERTO CHAVIRA PARRA",
-                    "JESUS ALBERTO ALVAREZ DOMINGUEZ",
-                    "ALEJANDRO VIVANCO ABARCA",
-                    "JULIO ESTRADA VILLEGAS",
-                    'LOGÍSTICA INTERNA',
-                    'IST',
-                    'PROVEEDOR',
-                    'ALMACÉN'
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _responsable = newValue;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor seleccione el nombre responsable';
-                    }
-                    return null;
-                  },
-                ),
+                _isLoadingOperadores
+                    ? Center(child: CircularProgressIndicator())
+                    : DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: 'Responsable',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        value: _responsable,
+                        isExpanded: true,
+                        items: _operadoresList.map((nombre) {
+                          return DropdownMenuItem<String>(
+                            value: nombre,
+                            child:
+                                Text(nombre, overflow: TextOverflow.ellipsis),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _responsable = newValue;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor seleccione un responsable';
+                          }
+                          return null;
+                        },
+                      ),
+
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   decoration: InputDecoration(
@@ -894,6 +943,49 @@ class _ProcesoInspeccionState extends State<ProcesoInspeccion> {
                   },
                 ),
                 const SizedBox(height: 10),
+                const SizedBox(height: 10),
+                FormField<String>(
+                  initialValue: _condicionEquipo,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor selecciona la condición';
+                    }
+                    return null;
+                  },
+                  builder: (FormFieldState<String> field) {
+                    return InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Condición del equipo',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        errorText: field.errorText, // ¡aquí aparece el mensaje!
+                      ),
+                      child: Column(
+                        children: [
+                          RadioListTile<String>(
+                            title: const Text('Nuevo'),
+                            value: 'Nuevo',
+                            groupValue: field.value,
+                            onChanged: (value) {
+                              field.didChange(value);
+                              setState(() => _condicionEquipo = value);
+                            },
+                          ),
+                          RadioListTile<String>(
+                            title: const Text('Refurbished'),
+                            value: 'Refurbished',
+                            groupValue: field.value,
+                            onChanged: (value) {
+                              field.didChange(value);
+                              setState(() => _condicionEquipo = value);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [

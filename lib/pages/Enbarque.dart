@@ -27,7 +27,7 @@ class _EmbarqueState extends State<Embarque> {
   String correo = "";
   String usuario = "";
   String fase = "Embarque";
-  String version = "v10";
+  String version = "v11";
   final _numSerie = TextEditingController();
   String? _equipos;
   String? _accesorio;
